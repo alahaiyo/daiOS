@@ -31,6 +31,11 @@ _bss_start:
 .globl _bss_end
 _bss_end:
 	.word __bss_end
+
+/* IRQ stack memory (calculated at run-time) */
+.globl IRQ_STACK_START
+IRQ_STACK_START:
+	.word	0x0badc0de
 	
 /*
  * the actual reset code
@@ -180,6 +185,10 @@ next_char:
 uart_base_addr_L1:
 	.word 0x12100000
 
+	
+/*
+*   Interrupt handling
+*/
 
 /*
  * exception handlers
@@ -206,7 +215,11 @@ not_used:
 
 	.align	5
 irq:
-	nop
+	ldr sp, =0x8f600000
+	sub r14, r14, #4
+	stmfd r13!, {r0-r3, r14}
+	bl do_irq
+	ldmfd r13!, {r0-r3, pc}^
 
 	.align	5
 fiq:
