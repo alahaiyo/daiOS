@@ -4,9 +4,9 @@ OBJCOPY=arm-hisiv300-linux-objcopy
 
 CFLAGS= -O2 -g
 ASFLAGS= -O2 -g
-LDFLAGS=-Tdaios.lds -Ttext 0x80000000
+LDFLAGS=-Tdaios.lds -Ttext 0x00000000
 
-OBJS=start.o boot.o uart.o print.o
+OBJS=start.o boot.o uart.o print.o irq_handle.o
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<
