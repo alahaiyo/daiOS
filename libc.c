@@ -94,3 +94,15 @@ unsigned int strlen(const char *s)
 	return len;
 }
 
+char *strncpy (char * dest, const char *source, int count)
+{
+	char *start = dest;
+	
+	while (count && (*dest++ = *source++))
+		count--;
+	if (count)
+		while (--count)
+			*dest++ = '\0';
+		
+	return(start);
+}

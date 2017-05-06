@@ -59,7 +59,7 @@ void irq_init()
 	enable_interrupts();
 }
 
-void do_irq(void)
+void gpio_irq_handle(void)
 {
 	INT_INTENABLE_ADDR &= (~(1 << 31));
 	GPIO7_IC_ADDR &= (~(1 << 5));

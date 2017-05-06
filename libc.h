@@ -28,6 +28,8 @@ char *strchr(const char *s, char ch);
 
 unsigned int strlen(const char *s);
 
+char *strncpy (char * dest, const char *source, int count);
+
 /******************************************************************************/
 #endif /* LIBCH */
 

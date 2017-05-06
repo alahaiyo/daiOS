@@ -1,3 +1,6 @@
+
+#include "storage.h"
+
 #define TIMING_SPI_CFG     0x10000008     
 #define FMC_CFG            0x10000000  //0x65
 #define GLOBAL_CFG         0x10000004
@@ -23,7 +26,11 @@
 #define CS_SETUP_TIME				0x6
 #define CS_DESELECT_TIME			0xf
 
-#define	NULL	((void *)0)
+
+#define NAND_PAGE_SIZE 2048
+#define NAND_CHIP_SIZE 256*1024*1024
+#define NAND_BLOCK_SIZE 128*1024
+
 
 void nand_init()
 {
@@ -114,7 +121,7 @@ int nand_erase_block(unsigned int addr)
 }
  
  
-int nand_read_page(unsigned int addr, char buf)
+int nand_read_page(unsigned int addr, char *buf)
 {
 	unsigned int reg;
 	unsigned int page;
@@ -182,5 +189,68 @@ int nand_write_page(unsigned int addr, char *buf)
 	return 0;
 }
 
+/*
+ *  Nand Flash 读数据函数
+ * 
+ *  *sd 存储设备结构体， *dest 缓存， start 起始地址， size 读写数据大小 
+*/
+int nand_read(struct storage_device *sd, void *dest, unsigned int start, size_t size)
+{
+	int ret;
+	unsigned int addr;
+	int pagesize = sd->sector_size;
+	char *buf = (char *)dest;
+	
+	if(start % pagesize!=0) {
+		printk("nand_read: Start addr is not alignment!\r\n");
+		return -1;
+	}
+	
+	if(size % pagesize!=0) {
+		printk("nand_read: Read size is not alignment!\r\n");
+		return -1;
+	}
+	
+	if(sd->start_pos + size > sd->storage_size) {
+		printk("nand_read: Read size is out of rang!\r\n");
+		return -1;
+	}
+	//NAND_ENABLE_CE();
+	addr = sd->start_pos + start;
+	
+	printk("nand read: addr = %x; size = %d\r\n", addr, size);
+	while(size > 0) {
+		
+		nand_read_page(addr, buf);
+		buf += pagesize;
+		size -= pagesize;
+		addr += pagesize;
+		
+	}
+	
+	return 0;
+	
+}
+
+
+struct storage_device nand_stroage_device = {
+	//.write_data = nand_write,
+	.read_data = nand_read,
+	.sector_size = NAND_PAGE_SIZE,
+	.storage_size = NAND_CHIP_SIZE,
+	.start_pos = 0,
+};
+
+int nand_device_init()
+{
+	int ret;
+	
+	nand_init();
+	ret = register_storage_device(&nand_stroage_device, NAND_FLASH);
+	if(!ret)
+		return 0;
+	else
+		return -1;
+}
 
 

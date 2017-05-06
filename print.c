@@ -1,3 +1,9 @@
+/*
+*
+*   print.c
+*   daikunhai@163.com
+*/
+#include "libc.h"
 
 typedef char * va_list;
 #define _INTSIZEOF(n)   ((sizeof(n)+sizeof(int)-1)&~(sizeof(int) - 1) )
@@ -67,6 +73,7 @@ void __put_char(char *p,int num){
 	};
 }
 
+/*
 void * memcpy(void * dest,const void *src,unsigned int count)
 {
 	char *tmp = (char *) dest, *s = (char *) src;
@@ -74,6 +81,7 @@ void * memcpy(void * dest,const void *src,unsigned int count)
 		*tmp++ = *s++;
 	return dest;
 }
+*/
 
 char *number(char *str, int num,int base,unsigned int flags)
 {

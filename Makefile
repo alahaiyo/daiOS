@@ -6,7 +6,7 @@ CFLAGS= -O2 -g
 ASFLAGS= -O2 -g
 LDFLAGS=-Tdaios.lds -Ttext 0x00000000
 
-OBJS=start.o boot.o uart.o print.o irq_handle.o timer.o irq.o
+OBJS=start.o boot.o uart.o print.o irq_handle.o timer.o irq.o nand.o mem.o chip.o libc.o storage.o daifs.o fs.o
 
 .c.o:
 	$(CC) $(CFLAGS) -c $<

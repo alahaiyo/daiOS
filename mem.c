@@ -105,9 +105,9 @@ static inline int list_empty(const struct list_head *head)
 
 
 
-
-#define _MEM_END	0x5d000000
-#define _MEM_START	0x51000000
+/* 内存管理大小 250MB */
+#define _MEM_END	0x8fc00000
+#define _MEM_START	0x80200000
 
 
 #define PAGE_SHIFT	(12)  //page size = 4KB  12bit
@@ -322,7 +322,9 @@ void free_pages(struct page *pg,int order)
 	put_pages_to_list(pg,order);
 }
 
-//获得空闲页
+/*
+* 获得（2^order）个page的内存空间
+*/
 void *get_free_pages(unsigned int flag,int order){
 	struct page * page;
 	page = alloc_pages(flag, order);//分配页
@@ -331,7 +333,9 @@ void *get_free_pages(unsigned int flag,int order){
 	return	page_address(page);
 }
 
-void put_free_pages(void *addr,int order){
+
+void put_free_pages(void *addr,int order)
+{
 	free_pages(virt_to_page((unsigned int)addr),order);
 }
 
