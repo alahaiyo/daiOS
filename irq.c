@@ -9,7 +9,7 @@ void do_irq()
 	
 //	printk("do irq INT_INTSTATUS = %x \r\n", a);
 //	printk("do irq INT_RAMINTR = %x \r\n", b);
-	
+	printk("(%d,%d)", a, b);
 	if(INT_INTSTATUS & (1 << 3)) {
 		timer_irq_handle();
 	}

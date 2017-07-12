@@ -16,94 +16,10 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see http://www.gnu.org/licenses/.
 */
 
+#include "list.h"
+#include "mem.h"
+
 #define	NULL	((void *)0)
-
-struct list_head {
-	struct list_head *next, *prev;
-};
-
-
-static inline void INIT_LIST_HEAD(struct list_head *list)
-{
-	list->next = list;
-	list->prev = list;
-}
-
-static inline void __list_add(struct list_head *new_lst,
-			      struct list_head *prev,
-			      struct list_head *next)
-{
-	next->prev = new_lst;
-	new_lst->next = next;
-	new_lst->prev = prev;
-	prev->next = new_lst;
-}
-
-static inline void list_add(struct list_head *new_lst, struct list_head *head)
-{
-	__list_add(new_lst, head, head->next);
-}
-
-static inline void list_add_tail(struct list_head *new_lst, struct list_head *head)
-{
-	__list_add(new_lst, head->prev, head);
-}
-
-static inline void __list_del(struct list_head * prev, struct list_head * next)
-{
-	next->prev = prev;
-	prev->next = next;
-}
-
-static inline void list_del(struct list_head * entry)
-{
-	__list_del(entry->prev,entry->next);
-}
-
-
-static inline void list_remove_chain(struct list_head *ch,struct list_head *ct){
-	ch->prev->next=ct->next;
-	ct->next->prev=ch->prev;
-}
-
-static inline void list_add_chain(struct list_head *ch,struct list_head *ct,struct list_head *head){
-		ch->prev=head;
-		ct->next=head->next;
-		head->next->prev=ct;
-		head->next=ch;
-}
-
-static inline void list_add_chain_tail(struct list_head *ch,struct list_head *ct,struct list_head *head){
-		ch->prev=head->prev;
-		head->prev->next=ch;
-		head->prev=ct;
-		ct->next=head;
-}
-
-
-static inline int list_empty(const struct list_head *head)
-{
-	return head->next == head;
-}
-
-
-#define offsetof(TYPE, MEMBER) ((unsigned int) &((TYPE *)0)->MEMBER)
-
-
-#define container_of(ptr, type, member) ({			\
-	const typeof( ((type *)0)->member ) *__mptr = (ptr);	\
-		(type *)( (char *)__mptr - offsetof(type,member) );})
-
-
-#define list_entry(ptr,type,member)	\
-    container_of(ptr, type, member)
-
-
-
-#define list_for_each(pos, head) \
-	for (pos = (head)->next; pos != (head); pos = pos->next)
-
-
 
 /* 内存管理大小 250MB */
 #define _MEM_END	0x8fc00000
@@ -132,26 +48,6 @@ static inline int list_empty(const struct list_head *head)
 #define PAGE_PROTECT		0x02
 #define PAGE_BUDDY_BUSY		0x04
 #define PAGE_IN_CACHE		0x08
-
-
-struct kmem_cache{
-	unsigned int obj_size;
-	unsigned int obj_nr;
-	unsigned int page_order;
-	unsigned int flags;
-	struct page *head_page;
-	struct page *end_page;
-	void *nf_block;
-};
-
-struct page {
-	unsigned int vaddr;
-	unsigned int flags;
-	int order;
-	struct kmem_cache *cachep;
-	struct list_head list;//to string the buddy member
-};
-
 
 
 /*这里我设置的最大分配的budy大小是2^12 = 4096PAGE = 16MB*/
@@ -238,6 +134,7 @@ struct page *get_pages_from_list(int order){
 			goto OUT_OK;
 		}
 	}
+	printk("Error: Can't get pages from list!\r\n");
 	return NULL;
 //如果是从大号的链表中取出来的，那么就要进行善后处理	
 OUT_OK:
@@ -304,11 +201,13 @@ struct page *alloc_pages(unsigned int flag,int order)
 {
 	struct page *pg;
 	int i;
-	pg=get_pages_from_list(order);//从链表中取出需要的页，参数是order
-	if(pg==NULL)
+	pg = get_pages_from_list(order); //从链表中取出需要的页，参数是order
+	if(pg == NULL) {
+		printk("alloc pages failed!\r\n");
 		return NULL;
-	for(i=0;i<(1<<order);i++){
-		(pg+i)->flags|=PAGE_DIRTY; //获取出来的每个页都标记为脏
+	}
+	for(i = 0; i < (1 << order); i++) {
+		(pg+i)->flags |= PAGE_DIRTY; //获取出来的每个页都标记为脏
 	}
 	return pg;
 }

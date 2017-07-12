@@ -43,7 +43,7 @@ IRQ_STACK_START:
 
 reset:
 	/*
-	 * set the cpu to SVC32 mode
+	 * set the cpu to SYS mode
 	 */
 	mrs	r0, cpsr
 	bic	r0, r0, #0x1f
@@ -111,7 +111,7 @@ clbss_l:
 	cmp	r0, r1			@ are we at the end yet
 	add	r0, r0, #4		@ increment clear index pointer
 	bne	clbss_l			@ keep clearing till at end
-
+	
 	ldr	pc, _start_armboot	@ jump to C code
 	
 loop:
@@ -189,7 +189,28 @@ uart_base_addr_L1:
 /*
 *   Interrupt handling
 */
+.equ DISABLE_IRQ,0x80
+.equ DISABLE_FIQ,0x40
+.equ SYS_MOD,0x1f
+.equ IRQ_MOD,0x12
+.equ FIQ_MOD,0x11
+.equ SVC_MOD,0x13
+.equ ABT_MOD,0x17
+.equ UND_MOD,0x1b
+.equ MOD_MASK,0x1f
 
+
+.macro CHANGE_TO_SVC
+        msr     cpsr_c,#(DISABLE_FIQ|DISABLE_IRQ|SVC_MOD)
+.endm
+
+.macro CHANGE_TO_IRQ
+        msr     cpsr_c,#(DISABLE_FIQ|DISABLE_IRQ|IRQ_MOD)
+.endm
+
+.macro CHANGE_TO_SYS
+        msr     cpsr_c,#(DISABLE_FIQ|DISABLE_IRQ|SYS_MOD)
+.endm
 /*
  * exception handlers
  */
@@ -217,10 +238,79 @@ not_used:
 irq:
 	ldr sp, =0x8f600000
 	sub r14, r14, #4
-	stmfd r13!, {r0-r3, r14}
-	bl do_irq
-	ldmfd r13!, {r0-r3, pc}^
+	stmfd r13!,{r0}	
+	stmfd r13!,{r1-r3} //r0-r3压入中断模式的堆栈中	
+/*	
+	ldr r2, =0x10040000 //INT_IRQSTATUS
+	ldr r1, [r2]
+	tst r1, #0x8   //查询中断状态寄存器，Timer0/Timer1
+	bne timer_irq   //=0跳转
 
+other_irq:	
+	stmfd r13!,{r14}	
+	bl do_irq
+	ldmfd r13!, {r4}
+	ldmfd r13!, {r1-r3}
+	ldmfd r13!, {r0}
+	stmfd r13!, {r4}
+	ldmfd r13!, {pc}^  //r14恢复到pc，直接跳转回去
+
+	
+timer_irq:	
+	ldr r2, =0x12000010 //查询是否发生定时器中断
+	ldr r1, [r2]
+	tst r1, #0x1
+*/
+	
+	ldr r2, =0x1200000c
+	mov r1, #0xff
+	str r1, [r2]  //清中断
+
+	mov r1,r14          //r14给到r1，这里的r14存放着中断之前的执行地址，也就是中断返回后要给PC去继续执行的
+	
+	
+	mrs	r0, cpsr
+	bic	r0, r0, #0x1f
+	orr	r0, r0, #0xd3
+	msr	cpsr,r0      //切回到系统模式 ---------------------------------------------------------------
+	
+	stmfd r13!,{r1}    //先把r0压栈，也就是中断时刻要本来将要执行的地址                     sys   |
+	stmfd r13!,{r14}   //然后r14压栈，这个保持上个函数返回地址                                    |
+/*
+	mrs	r0, cpsr
+	bic	r0, r0, #0x12
+	orr	r0, r0, #0xd3
+	msr	cpsr,r0  */
+    CHANGE_TO_IRQ    //回到中断模式------------------------------------------------------------------
+	
+	ldmfd r13!,{r1-r3}  //把r1-r3出栈
+	ldmfd r13!,{r0}    //把之前入栈的r0弹出来，这个时候，我们已经回到刚进中断时候的状态了。
+	ldr r14,=__asm_schedule       //                                                        irq
+	stmfd r13!,{r14}   // 先压栈，再出栈，跳转到__asm_schedule。
+	ldmfd r13!,{pc}^  // 然后返回到用户模式------------------------------------------------------------
+
+__asm_schedule:
+	stmfd r13!,{r0-r12}   //用户模式下，保护上一个进程现场
+	mrs	r1, cpsr
+	stmfd r13!,{r1}
+
+	mov	r1,sp
+	bic	r1,#0xff0
+	bic r1,#0xf   //此时r1的值就是进程内存的低地址
+	mov r0,sp    
+	str r0,[r1]   //保存上一个进程的sp指针到进程最低地址，ok，保存完毕！
+/*	
+	ldr r2, =0x12141080
+	mov r1, #0x20
+	str r1, [r2]  //蓝灯
+*/	
+	bl __common_schedule
+	
+	ldr sp,[r0]     //返回的地址给SP，下一个进程的sp
+	ldmfd r13!,{r1} 
+	msr cpsr_cxsf,r1
+	ldmfd r13!,{r0-r12,r14,pc}	//恢复现场，pc指针执行进程下一条指令。
+	
 	.align	5
 fiq:
 	nop

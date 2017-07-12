@@ -9,17 +9,7 @@
 #define GPIO7_IC_ADDR           (*(volatile unsigned int *)0x1214741c)
 #define GPIO7_IE_ADDR           (*(volatile unsigned int *)0x12147410)
 
-unsigned int gpio_base[] = {
-	0x12140000,	///> GPIO0
-	0x12141000,
-	0x12142000,
-	0x12143000,
-	0x12144000,
-	0x12145000,
-	0x12146000,
-	0x12147000,	///> GPIO7
-	0x12148000,	///> GPIO8(only 3 pin)
-};
+extern unsigned int gpio_base[9];
 
 
 #define DATA_REG(bank, pin) (gpio_base[bank] + (1 << (pin + 2)))

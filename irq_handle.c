@@ -56,7 +56,7 @@ void irq_init()
 	INT_INTENABLE_ADDR |= (1 << 31);
 	INT_INTENCLEAR_ADDR &= (~(1 << 31));
 	
-	enable_interrupts();
+//	enable_interrupts();
 }
 
 void gpio_irq_handle(void)
