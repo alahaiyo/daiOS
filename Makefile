@@ -5,20 +5,29 @@ OBJCOPY=arm-hisiv300-linux-objcopy
 CFLAGS= -O2 -g
 ASFLAGS= -O2 -g
 LDFLAGS=-Tdaios.lds -Ttext 0x00000000
+#LDFLAGS += -static -nostartfiles -nostdlib
 
-OBJS = start.o boot.o uart.o print.o irq_handle.o timer.o irq.o nand.o mem.o chip.o libc.o storage.o daifs.o fs.o 
-OBJS += process.o
-OBJS += led.o
-OBJS += gpio.o
+TARGET = daios
+BIN = daios.bin
 
-.c.o:
+
+SRC += ${wildcard  *.c} 
+SRC += ${wildcard  shell/*.c} 
+
+OBJS += start.o
+OBJS += ${patsubst %.c, %.o, ${SRC}}
+
+all:$(TARGET)
+
+$(OBJ):%.o:%.c
 	$(CC) $(CFLAGS) -c $<
-.s.o:
+
+start.o:start.S
 	$(CC) $(ASFLAGS) -c $<
 
-daios:$(OBJS)
+$(TARGET):$(OBJS)
 	$(CC) -static -nostartfiles -nostdlib -v $(LDFLAGS) $? -o $@ -lgcc
-	$(OBJCOPY) -O binary $@ daios.bin
+	$(OBJCOPY) -O binary $@ $(BIN)
 
 clean:
 	rm *.o daios daios.bin -f

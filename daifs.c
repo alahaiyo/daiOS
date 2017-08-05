@@ -18,34 +18,9 @@ along with this program.  If not, see http://www.gnu.org/licenses/.
 
 #include "fs.h"
 #include "storage.h"
+#include "daifs.h"
 
-#define MAX_INODE_NUMBER 128-1
-#define MAX_INODE_PAGE   4
-#define INODE_SIZE       64
-#define SUPER_BLOCK_SIZE 64
-#define PAGE_SIZE        2048
-#define DAIFS_MAX_FILE_NAME  44
-
-#define NORMAL_FILE     1
-#define DIRECTORY_FILE  2
-
-struct daifs_super_block {
-	unsigned int s_word0;
-	unsigned int s_word1;
-	unsigned int s_size;
-	unsigned int s_checksum;
-	char s_name[48];
-};
-
-struct daifs_inode {
-	unsigned int i_mode;
-	unsigned int i_offset;
-	unsigned int i_length;
-	unsigned int i_num;
-	unsigned int i_father_num;	
-	char i_name[44];
-};
-
+extern unsigned int current_dir_inode;
 struct daifs_inode *daifs_inode_table;
 
 static char *bmap(char *tmp,char *dir)
@@ -150,6 +125,8 @@ int daifs_init(void)
 
 	printk("filesystem name : daifs\r\n");
 	printk("         Author : %s\r\n", dai_sb->s_name);
+	
+	current_dir_inode = 0; //指定当前目录为根目录，更目录的inode号为0
 	
 	return ret;
 }

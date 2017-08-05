@@ -2,9 +2,6 @@
 
 #define DAIFS	0
 
-struct super_block;
-
-
 struct inode{
 	char *name;
 	unsigned int flags;

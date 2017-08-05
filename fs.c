@@ -2,7 +2,7 @@
 #define NULL (void *)0
 
 struct super_block *fs_type[MAX_SUPER_BLOCK];
-
+unsigned int current_dir_inode;
 
 int register_file_system(struct super_block *type,unsigned int id)
 {

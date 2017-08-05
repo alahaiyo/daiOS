@@ -6,6 +6,8 @@
 
 #define	NULL	((void *)0)
 
+extern int do_reboot();
+
 struct task_info{
 	unsigned int sp;
 	struct task_info *next;
@@ -26,20 +28,6 @@ int  test_process(void *p)
 	return 0;
 }
 
-int turn_to_user (void)
-{
-	unsigned long old,temp;
-	__asm__ __volatile__(
-				 "mrs %0, cpsr\n"
-				 "bic %0, %0, #0x1f\n"
-			     "orr %1, %0, #0x10\n"
-			     "msr cpsr_c, %1\n"
-				 "ldr sp, =0x8ffffffc"
-			     : "=r" (old), "=r" (temp)
-			     :
-			     : "memory");
-	return (old & 0x80) == 0;
-}
 
 void start_armboot(void)
 {
@@ -91,15 +79,17 @@ void start_armboot(void)
 	printk("\r\nNow, we start creat a process!\r\n");
 
 	task_init();
-	i=do_fork(test_process,(void *)0x1);
-	i=do_fork(test_process,(void *)0x2);
+//	i=do_fork(test_process,(void *)0x1);
+//	i=do_fork(test_process,(void *)0x2);
 	
 	timer_init();
-	enable_interrupts ();
+//	enable_interrupts ();
 	
 	
 end:	
-	printk("\r\nPress button to reboot!\r\n");
+//	printk("\r\nPress button to reboot!\r\n");
+	
+	shell_main_loop();
 	while(1) {
 		if(!gpio_get(7, 5)) {
 		//	printk("Low\r\n");	
